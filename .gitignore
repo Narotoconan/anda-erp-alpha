@@ -1,6 +1,4 @@
 venv
+.venv
 storage/logs/*
-storage/template/img/*
-storage/RSA/encrypt/public.pem
-storage/RSA/encrypt/private.pem
 */**/__pycache__

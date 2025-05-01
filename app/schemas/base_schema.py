@@ -3,7 +3,7 @@ from pydantic import ConfigDict
 from datetime import datetime
 
 
-class BaseModel(PydanticBaseModel):
+class BaseSchema(PydanticBaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
         json_encoders={
