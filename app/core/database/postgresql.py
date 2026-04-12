@@ -8,9 +8,8 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 from asyncio import current_task
-from typing import Optional, Any
+from typing import Optional
 from app.core.log import log
-
 
 class AsyncPgSql:
     def __init__(self, host: str, port: int, user: str, password: str, database: str):
@@ -18,9 +17,11 @@ class AsyncPgSql:
 
         self.__engine: Optional[AsyncEngine] = None
         self.AsyncSessionLocal: Optional[AsyncSession] = None
+        self.Base = declarative_base()
+
+        self.__create_engine()
 
     def __create_engine(self) -> None:
-
         try:
 
             self.__engine = create_async_engine(
@@ -36,6 +37,7 @@ class AsyncPgSql:
                     "timeout": 30,  # 操作超时时间（秒）
                 }
             )
+            log.info(f"数据库会话创建成功！")
         except SQLAlchemyError as e:
             log.error(f"数据库引擎创建失败！")
             raise e
@@ -57,9 +59,6 @@ class AsyncPgSql:
             log.error(f"数据库会话创建失败！")
             raise e
 
-    @staticmethod
-    def get_declarative_base() -> Any:
-        return declarative_base()
 
     async def disconnect(self) -> None:
         if self.__engine:

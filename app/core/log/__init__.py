@@ -7,7 +7,8 @@ log: Optional[Logger] = None
 
 def register_log():
     global log
-    log = register()
+    if log is None:
+        log = register()
 
 
 __all__ = ['register_log', 'log']

@@ -8,7 +8,7 @@ from .shutdown import shutdown
 async def lifespan(app: FastAPI):
     startup()
     yield
-    shutdown()
+    await shutdown()
 
 
 __all__ = ['lifespan']

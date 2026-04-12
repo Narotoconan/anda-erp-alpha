@@ -1,5 +1,7 @@
 from .postgresql import AsyncPgSql
 from config.settings import get_settings
+from app.core.log import log
+
 
 settings = get_settings()
 
@@ -11,19 +13,22 @@ _pgsql = AsyncPgSql(
     database=settings.database.DB_DATABASE
 )
 
-AsyncSessionLocal = _pgsql.create_session()
-Base = _pgsql.get_declarative_base()
+AsyncSessionLocal = _pgsql.AsyncSessionLocal
+Base = _pgsql.Base
 
 
 def db_first_connection():
-    from app.core.log import log
-
     log.info("Database first connection")
-    pass
+
+
+async def db_disconnect():
+    await _pgsql.disconnect()
+    log.info("数据库连接已关闭！")
 
 
 __all__ = [
     "AsyncSessionLocal",
     "Base",
     "db_first_connection",
+    "db_disconnect"
 ]
