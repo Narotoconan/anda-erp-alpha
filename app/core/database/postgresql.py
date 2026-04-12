@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 from asyncio import current_task
-from typing import Optional
+from typing import Optional, Any
 from app.core.log import log
 
 
@@ -58,10 +58,10 @@ class AsyncPgSql:
             raise e
 
     @staticmethod
-    def get_declarative_base():
+    def get_declarative_base() -> Any:
         return declarative_base()
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         if self.__engine:
             await self.__engine.dispose()
 

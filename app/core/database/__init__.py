@@ -1,12 +1,14 @@
 from .postgresql import AsyncPgSql
-from config import DATABASE_SETTINGS
+from config.settings import get_settings
+
+settings = get_settings()
 
 _pgsql = AsyncPgSql(
-    host=DATABASE_SETTINGS.DB_HOST,
-    port=DATABASE_SETTINGS.DB_PORT,
-    user=DATABASE_SETTINGS.DB_USER,
-    password=DATABASE_SETTINGS.DB_PASSWORD,
-    database=DATABASE_SETTINGS.DB_DATABASE,
+    host=settings.database.DB_HOST,
+    port=settings.database.DB_PORT,
+    user=settings.database.DB_USER,
+    password=settings.database.DB_PASSWORD,
+    database=settings.database.DB_DATABASE
 )
 
 AsyncSessionLocal = _pgsql.create_session()

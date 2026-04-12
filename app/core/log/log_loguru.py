@@ -1,28 +1,36 @@
 import sys
 import logging
 from loguru import logger
+from config.settings import get_settings
 
 
 def register() -> logging.Logger:
-    level = logging.DEBUG
-    path = '/logs'
-    retention = "14 days"
+    settings = get_settings()
+    level = settings.logger.LOG_LEVEL
+    path = f'{settings.app.BASE_PATH}/logs'
+    retention = settings.logger.LOG_RETENTION
+    rotation_time = settings.logger.LOG_ROTATION_TIME
 
-    # intercept everything at the root logger
+    # 拦截根记录器
     logging.root.handlers = [InterceptHandler()]
     logging.root.setLevel(level)
 
-    # remove every other logger's handlers
-    # and propagate to root logger
+    # 清理其他记录器的处理程序
     for name in logging.root.manager.loggerDict.keys():
         logging.getLogger(name).handlers = []
         logging.getLogger(name).propagate = True
 
-    # configure loguru
-    logger.configure(handlers=[
-        {"sink": sys.stdout},
-        # {"sink": path, "rotation": "00:00", "retention": retention},
-    ])
+    # 配置 loguru - 添加格式化
+    logger.add(
+        sink=sys.stdout,
+        level=level,
+    )
+    logger.add(
+        sink=f"{path}/app.log",
+        level=level,
+        rotation=rotation_time,
+        retention=retention
+    )
 
     return logger
 

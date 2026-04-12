@@ -1,12 +1,14 @@
 from fastapi import FastAPI
-from config import APP_SETTINGS
+from config.settings import get_settings
 from app.core.events import lifespan
 from app.core.log import register_log
 from app.api import register_router
 
+settings = get_settings()
+
 app = FastAPI(
-    title=APP_SETTINGS.APP_NAME,
-    version=APP_SETTINGS.APP_VERSION,
+    title=settings.app.APP_NAME,
+    version=settings.app.APP_VERSION,
     lifespan=lifespan
 )
 
