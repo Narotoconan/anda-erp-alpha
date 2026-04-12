@@ -1,8 +1,9 @@
+from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import AsyncSessionLocal
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     # 每个请求独立作用域
     session = AsyncSessionLocal()
     try:

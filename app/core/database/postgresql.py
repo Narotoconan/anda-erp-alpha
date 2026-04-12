@@ -37,7 +37,6 @@ class AsyncPgSql:
                     "timeout": 30,  # 操作超时时间（秒）
                 }
             )
-            log.info(f"数据库会话创建成功！")
         except SQLAlchemyError as e:
             log.error(f"数据库引擎创建失败！")
             raise e
