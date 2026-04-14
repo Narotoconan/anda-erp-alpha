@@ -1,0 +1,507 @@
+"""
+Redis 异步连接管理器 - 轻量级设计
+支持自动连接池、异步操作、JSON 序列化、连接保活
+"""
+import json
+import asyncio
+from typing import Any, Optional
+import redis.asyncio as redis
+from redis.asyncio import Redis, ConnectionPool
+from config.settings import get_settings
+from loguru import logger
+
+
+class RedisManager:
+    """Redis 异步连接管理器"""
+
+    _instance: Optional['RedisManager'] = None
+    _pool: Optional[ConnectionPool] = None
+    _client: Optional[Redis] = None
+    _heartbeat_task: Optional[asyncio.Task] = None
+    _heartbeat_interval: int = 30  # 心跳间隔（秒）
+    _redis_prefix: Optional[str] = None  # Redis 键前缀
+    _reconnect_count: int = 0  # 重连计数
+    _max_reconnect_attempts: int = 5  # 最大重连次数
+
+    def __new__(cls) -> 'RedisManager':
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def _get_prefixed_key(self, key: str) -> str:
+        """获取带前缀的键名"""
+        if self._redis_prefix is None:
+            settings = get_settings()
+            self._redis_prefix = settings.cache.REDIS_PREFIX
+        return f"{self._redis_prefix}:{key}"
+
+    async def connect(self) -> None:
+        """初始化 Redis 连接池并启动心跳检查"""
+        if self._client is not None:
+            logger.debug("Redis 已连接，跳过重复连接")
+            return
+
+        settings = get_settings()
+        cache_config = settings.cache
+
+        try:
+            # 前置配置检查
+            logger.debug(f"[Redis] 连接前配置检查 - 主机:{cache_config.REDIS_HOST}, 端口:{cache_config.REDIS_PORT}")
+
+            # 验证基础配置
+            if not cache_config.REDIS_HOST or cache_config.REDIS_PORT <= 0:
+                raise ValueError("Redis 主机地址或端口配置错误")
+
+            if cache_config.REDIS_MAX_CONNECTIONS <= 0:
+                raise ValueError(f"Redis 连接池大小必须大于 0，当前值: {cache_config.REDIS_MAX_CONNECTIONS}")
+
+            if cache_config.REDIS_TIMEOUT <= 0:
+                raise ValueError(f"Redis 连接超时时间必须大于 0，当前值: {cache_config.REDIS_TIMEOUT}")
+
+            if not cache_config.REDIS_PREFIX or not isinstance(cache_config.REDIS_PREFIX, str):
+                raise ValueError(f"REDIS_PREFIX 必须是非空字符串，当前值: {cache_config.REDIS_PREFIX}")
+
+            # 创建连接池
+            logger.debug(f"[Redis] 创建连接池 - 最大连接数:{cache_config.REDIS_MAX_CONNECTIONS}")
+            self._pool = ConnectionPool.from_url(
+                url=f"redis://:{cache_config.REDIS_PASSWORD}@{cache_config.REDIS_HOST}:{cache_config.REDIS_PORT}/{cache_config.REDIS_DB}"
+                if cache_config.REDIS_PASSWORD
+                else f"redis://{cache_config.REDIS_HOST}:{cache_config.REDIS_PORT}/{cache_config.REDIS_DB}",
+                max_connections=cache_config.REDIS_MAX_CONNECTIONS,
+                socket_connect_timeout=cache_config.REDIS_TIMEOUT,
+                socket_keepalive=True,
+                decode_responses=True
+            )
+
+            # 创建 Redis 客户端
+            logger.debug("开始建立 Redis 客户端连接...")
+            self._client = redis.Redis(connection_pool=self._pool)
+
+            # 测试连接
+            await self._client.ping()
+            logger.info(
+                f"✅ Redis 连接成功 - "
+                f"主机:{cache_config.REDIS_HOST} | "
+                f"端口:{cache_config.REDIS_PORT} | "
+                f"数据库:{cache_config.REDIS_DB}"
+            )
+
+            # 启动心跳检查任务
+            self._start_heartbeat()
+
+        except Exception as e:
+            logger.error(f"❌ Redis 连接失败: {e}")
+            await self.disconnect()
+            raise
+
+    async def disconnect(self) -> None:
+        """关闭 Redis 连接并停止心跳检查"""
+        logger.debug("开始关闭 Redis 连接...")
+
+        # 停止心跳检查
+        self._stop_heartbeat()
+
+        if self._client is not None:
+            try:
+                await self._client.close()
+                logger.debug("✅ Redis 客户端已关闭")
+            except Exception as e:
+                logger.warning(f"⚠️ 关闭 Redis 客户端异常: {e}")
+            self._client = None
+
+        if self._pool is not None:
+            try:
+                await self._pool.disconnect()
+                logger.debug("✅ Redis 连接池已断开")
+            except Exception as e:
+                logger.warning(f"⚠️ Redis 连接池断开异常: {e}")
+            self._pool = None
+
+        logger.info("✅ Redis 已断开连接")
+
+    def _start_heartbeat(self) -> None:
+        """启动心跳检查任务"""
+        if self._heartbeat_task is not None:
+            logger.debug("❤️ 心跳检查已启动，跳过重复启动")
+            return
+
+        self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
+        logger.info(f"❤️ Redis 心跳检查已启动 (检查间隔: {self._heartbeat_interval} 秒)")
+
+    def _stop_heartbeat(self) -> None:
+        """停止心跳检查任务"""
+        if self._heartbeat_task is not None:
+            self._heartbeat_task.cancel()
+            self._heartbeat_task = None
+            logger.debug("❤️ Redis 心跳检查已停止")
+
+    async def _heartbeat_loop(self) -> None:
+        """心跳检查循环"""
+        while True:
+            try:
+                await asyncio.sleep(self._heartbeat_interval)
+
+                if self._client is None:
+                    break
+
+                # 执行 ping 测试连接
+                await self._client.ping()
+                logger.debug("❤️ Redis 心跳检查: 正常")
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.warning(f"⚠️ Redis 心跳检查失败: {e}")
+                # 尝试重新连接
+                try:
+                    logger.info("🔄 开始重连 Redis...")
+                    await self.disconnect()
+                    await asyncio.sleep(5)
+                    logger.info("🔄 尝试重新连接 Redis...")
+                    await self.connect()
+                    logger.info("✅ Redis 重连成功")
+                except Exception as reconnect_error:
+                    logger.error(f"❌ Redis 重连失败: {reconnect_error}")
+                    self._reconnect_count += 1
+                    if self._reconnect_count >= self._max_reconnect_attempts:
+                        logger.error("❌ 达到最大重连次数，停止重连")
+                        break
+
+    # ==================== Key-Value 操作 ====================
+
+    async def set(self, key: str, value: Any, ex: Optional[int] = None) -> bool:
+        """
+        设置缓存值
+        :param key: 缓存键（自动添加项目前缀）
+        :param value: 缓存值（自动序列化复杂类型）
+        :param ex: 过期时间（秒）
+        """
+        try:
+            prefixed_key = self._get_prefixed_key(key)
+            serialized_value = self._serialize(value)
+            result = await self._client.set(prefixed_key, serialized_value, ex=ex)
+            return result
+        except Exception as e:
+            logger.error(f"❌ 设置缓存失败 ({key}): {e}")
+            raise
+
+    async def get(self, key: str, default: Any = None) -> Any:
+        """
+        获取缓存值
+        :param key: 缓存键（自动添加项目前缀）
+        :param default: 默认值
+        """
+        try:
+            prefixed_key = self._get_prefixed_key(key)
+            value = await self._client.get(prefixed_key)
+            if value is None:
+                return default
+            try:
+                return self._deserialize(value)
+            except Exception as e:
+                logger.warning(f"⚠️ 反序列化值失败 ({key}): {e}, 原值: {value}")
+                return value
+        except Exception as e:
+            logger.error(f"❌ 获取缓存失败 ({key}): {e}")
+            raise
+
+    async def delete(self, *keys: str) -> int:
+        """删除缓存"""
+        if not keys:
+            return 0
+        try:
+            prefixed_keys = [self._get_prefixed_key(k) for k in keys]
+            return await self._client.delete(*prefixed_keys)
+        except Exception as e:
+            logger.error(f"❌ 删除缓存失败: {e}")
+            raise
+
+    async def exists(self, *keys: str) -> int:
+        """检查键是否存在"""
+        if not keys:
+            return 0
+        try:
+            prefixed_keys = [self._get_prefixed_key(k) for k in keys]
+            return await self._client.exists(*prefixed_keys)
+        except Exception as e:
+            logger.error(f"❌ 检查键存在性失败: {e}")
+            raise
+
+    async def clear(self) -> None:
+        """清空当前数据库所有键"""
+        try:
+            await self._client.flushdb()
+            logger.info("✅ 已清空 Redis 数据库")
+        except Exception as e:
+            logger.error(f"❌ 清空数据库失败: {e}")
+            raise
+
+    # ==================== 批量操作 ====================
+
+    async def mset(self, data: dict[str, Any]) -> bool:
+        """
+        批量设置缓存
+        :param data: {key: value, ...}（key自动添加项目前缀）
+        """
+        if not data:
+            return True
+
+        try:
+            serialized_data = {self._get_prefixed_key(k): self._serialize(v) for k, v in data.items()}
+            result = await self._client.mset(serialized_data)
+            return result
+        except Exception as e:
+            logger.error(f"❌ 批量设置失败: {e}")
+            raise
+
+    async def mget(self, *keys: str) -> list[Any]:
+        """
+        批量获取缓存
+        :param keys: 缓存键列表（自动添加项目前缀）
+        :return: 值列表（按键顺序）
+        """
+        if not keys:
+            return []
+
+        try:
+            prefixed_keys = [self._get_prefixed_key(k) for k in keys]
+            values = await self._client.mget(*prefixed_keys)
+            # 对每个值进行反序列化，处理可能的异常
+            result = []
+            for i, v in enumerate(values):
+                if v is None:
+                    result.append(None)
+                else:
+                    try:
+                        result.append(self._deserialize(v))
+                    except Exception as e:
+                        logger.warning(f"⚠️ 反序列化批量值失败 (key[{i}]): {e}, 原值: {v}")
+                        result.append(v)
+            return result
+        except Exception as e:
+            logger.error(f"❌ 批量获取失败 (keys: {keys}): {e}")
+            raise
+
+    # ==================== 哈希操作 ====================
+
+    async def hset(self, name: str, mapping: dict[str, Any]) -> int:
+        """
+        设置哈希字段
+        :param name: 哈希键名（自动添加项目前缀）
+        :param mapping: 字段映射 {field: value, ...}
+        """
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            serialized_mapping = {k: self._serialize(v) for k, v in mapping.items()}
+            return await self._client.hset(prefixed_name, mapping=serialized_mapping)
+        except Exception as e:
+            logger.error(f"❌ 哈希设置失败 ({name}): {e}")
+            raise
+
+    async def hget(self, name: str, key: str) -> Any:
+        """获取哈希字段值"""
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            value = await self._client.hget(prefixed_name, key)
+            return self._deserialize(value) if value is not None else None
+        except Exception as e:
+            logger.error(f"❌ 哈希获取失败 ({name}[{key}]): {e}")
+            raise
+
+    async def hgetall(self, name: str) -> dict[str, Any]:
+        """获取哈希所有字段"""
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            data = await self._client.hgetall(prefixed_name)
+            # 对每个值进行反序列化，处理可能的异常
+            result = {}
+            for k, v in data.items():
+                try:
+                    result[k] = self._deserialize(v)
+                except Exception as e:
+                    logger.warning(f"⚠️ 反序列化哈希值失败 ({name}[{k}]): {e}, 原值: {v}")
+                    result[k] = v
+            return result
+        except Exception as e:
+            logger.error(f"❌ 获取哈希所有字段失败 ({name}): {e}")
+            raise
+
+    async def hdel(self, name: str, *keys: str) -> int:
+        """删除哈希字段"""
+        if not keys:
+            return 0
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            return await self._client.hdel(prefixed_name, *keys)
+        except Exception as e:
+            logger.error(f"❌ 哈希删除失败 ({name}): {e}")
+            raise
+
+    # ==================== 列表操作 ====================
+
+    async def lpush(self, name: str, *values: Any) -> int:
+        """从列表左端推入值"""
+        if not values:
+            return 0
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            serialized_values = [self._serialize(v) for v in values]
+            return await self._client.lpush(prefixed_name, *serialized_values)
+        except Exception as e:
+            logger.error(f"❌ 列表左推失败 ({name}): {e}")
+            raise
+
+    async def rpush(self, name: str, *values: Any) -> int:
+        """从列表右端推入值"""
+        if not values:
+            return 0
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            serialized_values = [self._serialize(v) for v in values]
+            return await self._client.rpush(prefixed_name, *serialized_values)
+        except Exception as e:
+            logger.error(f"❌ 列表右推失败 ({name}): {e}")
+            raise
+
+    async def lrange(self, name: str, start: int = 0, end: int = -1) -> list[Any]:
+        """获取列表范围内的值"""
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            values = await self._client.lrange(prefixed_name, start, end)
+            # 对每个元素进行反序列化，处理可能的异常
+            result = []
+            for v in values:
+                try:
+                    result.append(self._deserialize(v))
+                except Exception as e:
+                    logger.warning(f"⚠️ 反序列化列表元素失败: {e}, 原值: {v}")
+                    result.append(v)
+            return result
+        except Exception as e:
+            logger.error(f"❌ 获取列表范围失败 ({name}[{start}:{end}]): {e}")
+            raise
+
+    async def lpop(self, name: str) -> Any:
+        """从列表左端弹出值"""
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            value = await self._client.lpop(prefixed_name)
+            return self._deserialize(value) if value is not None else None
+        except Exception as e:
+            logger.error(f"❌ 列表左弹出失败 ({name}): {e}")
+            raise
+
+    async def rpop(self, name: str) -> Any:
+        """从列表右端弹出值"""
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            value = await self._client.rpop(prefixed_name)
+            return self._deserialize(value) if value is not None else None
+        except Exception as e:
+            logger.error(f"❌ 列表右弹出失败 ({name}): {e}")
+            raise
+
+    # ==================== 集合操作 ====================
+
+    async def sadd(self, name: str, *members: Any) -> int:
+        """添加集合成员"""
+        if not members:
+            return 0
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            serialized_members = [self._serialize(m) for m in members]
+            return await self._client.sadd(prefixed_name, *serialized_members)
+        except Exception as e:
+            logger.error(f"❌ 集合添加失败 ({name}): {e}")
+            raise
+
+    async def smembers(self, name: str) -> set[Any]:
+        """获取集合所有成员"""
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            members = await self._client.smembers(prefixed_name)
+            # 对每个成员进行反序列化，处理可能的异常
+            result = set()
+            for m in members:
+                try:
+                    result.add(self._deserialize(m))
+                except Exception as e:
+                    logger.warning(f"⚠️ 反序列化集合成员失败: {e}, 原值: {m}")
+                    result.add(m)
+            return result
+        except Exception as e:
+            logger.error(f"❌ 获取集合成员失败 ({name}): {e}")
+            raise
+
+    async def srem(self, name: str, *members: Any) -> int:
+        """移除集合成员"""
+        if not members:
+            return 0
+        try:
+            prefixed_name = self._get_prefixed_key(name)
+            serialized_members = [self._serialize(m) for m in members]
+            return await self._client.srem(prefixed_name, *serialized_members)
+        except Exception as e:
+            logger.error(f"❌ 集合移除失败 ({name}): {e}")
+            raise
+
+    # ==================== 序列化/反序列化 ====================
+
+    @staticmethod
+    def _serialize(value: Any) -> str:
+        """自动序列化值（JSON）
+
+        处理规则：
+        - 字符串: 直接返回
+        - 布尔值: JSON 序列化（true/false）
+        - 数字: 直接转字符串
+        - None: "null"
+        - 复杂类型: JSON 序列化
+        """
+        if isinstance(value, str):
+            return value
+        # 注意：必须在 int 之前检查 bool，因为 bool 是 int 的子类
+        if isinstance(value, bool):
+            # 布尔值使用 JSON 序列化以保证正确的 true/false 格式
+            return json.dumps(value)
+        if isinstance(value, (int, float)):
+            return str(value)
+        if value is None:
+            return "null"
+        # 复杂类型使用 JSON 序列化
+        return json.dumps(value, ensure_ascii=False, default=str)
+
+    @staticmethod
+    def _deserialize(value: str) -> Any:
+        """自动反序列化值
+
+        尝试三步反序列化：
+        1. JSON 解析（布尔、数字、对象、数组等）
+        2. 处理 "null" 字符串
+        3. 返回原字符串（如果不是 JSON）
+        """
+        if not isinstance(value, str):
+            return value
+
+        # 尝试 JSON 解析
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, ValueError):
+            # 非 JSON 字符串直接返回
+            return value
+
+
+# 全局单例
+_redis_manager: Optional[RedisManager] = None
+
+
+def get_redis_manager() -> RedisManager:
+    """获取 Redis 管理器单例"""
+    global _redis_manager
+    if _redis_manager is None:
+        _redis_manager = RedisManager()
+    return _redis_manager
+
+
+__all__ = ['RedisManager', 'get_redis_manager']
+
