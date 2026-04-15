@@ -280,20 +280,22 @@ async def get_user_info(user_id: int):
 | `get(key, default)` | 获取值 | `await redis.get('key')` |
 | `delete(*keys)` | 删除键 | `await redis.delete('key1', 'key2')` |
 | `exists(*keys)` | 检查存在性 | `await redis.exists('key')` |
+| `expire(key, ex)` | 为已存在的键设置过期时间 | `await redis.expire('key', 3600)` |
+| `ttl(key)` | 获取键的剩余生存时间 | `await redis.ttl('key')` |
 | `clear()` | 清空数据库 | `await redis.clear()` |
 
 ### 批量操作
 
 | 方法 | 说明 |
 |------|------|
-| `mset(data)` | 批量设置 |
+| `mset(data, ex)` | 批量设置（支持过期时间） |
 | `mget(*keys)` | 批量获取 |
 
 ### 哈希操作
 
 | 方法 | 说明 |
 |------|------|
-| `hset(name, mapping)` | 设置哈希字段 |
+| `hset(name, mapping, ex)` | 设置哈希字段（支持过期时间） |
 | `hget(name, key)` | 获取单个字段 |
 | `hgetall(name)` | 获取所有字段 |
 | `hdel(name, *keys)` | 删除字段 |
@@ -302,8 +304,8 @@ async def get_user_info(user_id: int):
 
 | 方法 | 说明 |
 |------|------|
-| `lpush(name, *values)` | 左端推入 |
-| `rpush(name, *values)` | 右端推入 |
+| `lpush(name, *values, ex)` | 左端推入（支持过期时间） |
+| `rpush(name, *values, ex)` | 右端推入（支持过期时间） |
 | `lpop(name)` | 左端弹出 |
 | `rpop(name)` | 右端弹出 |
 | `lrange(name, start, end)` | 获取范围 |
@@ -312,7 +314,7 @@ async def get_user_info(user_id: int):
 
 | 方法 | 说明 |
 |------|------|
-| `sadd(name, *members)` | 添加成员 |
+| `sadd(name, *members, ex)` | 添加成员（支持过期时间） |
 | `smembers(name)` | 获取所有成员 |
 | `srem(name, *members)` | 移除成员 |
 
@@ -416,7 +418,42 @@ anda_erp:order1pending
 
 ### 2. TTL 设置
 
-根据数据特性设置合理的过期时间：
+所有主要数据操作函数都支持过期时间（TTL）设置，只需传递 `ex` 参数：
+
+```python
+# 字符串 - 设置过期时间
+await redis_manager.set('user:1', user_data, ex=3600)
+
+# 哈希 - 设置过期时间
+await redis_manager.hset('user:profile', {'name': 'Alice', 'age': 30}, ex=3600)
+
+# 列表 - 设置过期时间
+await redis_manager.lpush('tasks', 'task1', 'task2', ex=300)
+
+# 集合 - 设置过期时间
+await redis_manager.sadd('tags', 'python', 'fastapi', ex=600)
+
+# 批量设置 - 设置过期时间
+await redis_manager.mset({
+    'key1': 'value1',
+    'key2': 'value2'
+}, ex=3600)
+```
+
+**为已存在的键设置过期时间：**
+
+```python
+# 为已存在的键设置过期时间
+await redis_manager.expire('user:1', 3600)
+
+# 获取键的剩余生存时间
+remaining = await redis_manager.ttl('user:1')
+# 返回剩余秒数
+# -1 表示键存在但没有过期时间
+# -2 表示键不存在
+```
+
+**根据数据特性设置合理的过期时间：**
 
 ```python
 # 用户信息：1 小时

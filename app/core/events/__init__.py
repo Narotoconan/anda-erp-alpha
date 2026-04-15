@@ -6,7 +6,7 @@ from .shutdown import shutdown
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    startup()
+    await startup()
     yield
     await shutdown()
 
