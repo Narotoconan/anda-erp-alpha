@@ -7,8 +7,8 @@
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from loguru import logger
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from app.core.log import log
 
 from app.exceptions.errors import BizException, ErrorCode
 
@@ -36,7 +36,7 @@ def _build_error_response(
 
 async def biz_exception_handler(_request: Request, exc: BizException) -> JSONResponse:
     """业务异常处理"""
-    logger.warning(
+    log.warning(
         "BizException | code={} message={} path={}",
         exc.code,
         exc.message,
@@ -64,7 +64,7 @@ async def validation_exception_handler(
     msg = first.get("msg", "参数校验失败")
     detail = f"{loc}: {msg}" if loc else msg
 
-    logger.warning(
+    log.warning(
         "ValidationError | path={} detail={}",
         _request.url.path,
         detail,
@@ -94,7 +94,7 @@ async def http_exception_handler(
     }
     code = _STATUS_CODE_MAP.get(exc.status_code, ErrorCode.FAIL)
 
-    logger.warning(
+    log.warning(
         "HTTPException | status={} detail={} path={}",
         exc.status_code,
         exc.detail,
@@ -114,7 +114,7 @@ async def unhandled_exception_handler(
     兜底: 未被捕获的异常
     生产环境隐藏堆栈，仅记录日志
     """
-    logger.exception(
+    log.exception(
         "UnhandledException | path={} error={}",
         _request.url.path,
         str(exc),
