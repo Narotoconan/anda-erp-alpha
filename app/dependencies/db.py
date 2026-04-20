@@ -8,10 +8,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     session = AsyncSessionLocal()
     try:
         yield session
-        await session.commit()
     except Exception:
         await session.rollback()
         raise
     finally:
         await session.close()
-        AsyncSessionLocal.remove()  # 关键清理操作
+        await AsyncSessionLocal.remove()  # 清理 scoped_session 的 Task 注册表

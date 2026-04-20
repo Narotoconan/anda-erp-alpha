@@ -5,25 +5,31 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     AsyncEngine,
 )
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from asyncio import current_task
 from typing import Optional
 from app.core.log import log
+
+
+class Base(DeclarativeBase):
+    """SQLAlchemy 2.0+ 声明式基类"""
+    pass
+
 
 class AsyncPgSql:
     def __init__(self, host: str, port: int, user: str, password: str, database: str):
         self.__DATABASE_URL = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
 
         self.__engine: Optional[AsyncEngine] = None
-        self.AsyncSessionLocal: Optional[AsyncSession] = None
-        self.Base = declarative_base()
+        self.AsyncSessionLocal: Optional[async_scoped_session[AsyncSession]] = None
+        self.Base = Base
 
         self.__create_engine()
+        self.AsyncSessionLocal = self.__create_session()
 
     def __create_engine(self) -> None:
         try:
-
             self.__engine = create_async_engine(
                 self.__DATABASE_URL,
                 pool_size=5,  # 连接池大小
@@ -41,22 +47,18 @@ class AsyncPgSql:
             log.error(f"数据库引擎创建失败！")
             raise e
 
-    def create_session(self) -> async_scoped_session[AsyncSession]:
-        try:
-            _async_session = async_sessionmaker(
-                bind=self.__engine,
-                class_=AsyncSession,
-                expire_on_commit=False,
-                autoflush=True,
-                autocommit=False
-            )
-            return async_scoped_session(
-                session_factory=_async_session,
-                scopefunc=current_task
-            )
-        except SQLAlchemyError as e:
-            log.error(f"数据库会话创建失败！")
-            raise e
+    def __create_session(self) -> async_scoped_session[AsyncSession]:
+        _async_session = async_sessionmaker(
+            bind=self.__engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=True,
+            autocommit=False
+        )
+        return async_scoped_session(
+            session_factory=_async_session,
+            scopefunc=current_task
+        )
 
 
     async def disconnect(self) -> None:
