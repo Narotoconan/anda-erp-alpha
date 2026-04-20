@@ -18,10 +18,10 @@ async def get_user_list_api(
     """分页查询用户列表 — 演示分页响应"""
     # 模拟数据
     total = 56
-    items = [{"name": fake.name(), "email": fake.email()} for _ in range(page_size)]
+    datas = [{"name": fake.name(), "email": fake.email()} for _ in range(page_size)]
 
     return PageResponseSchema.ok(
-        items=items, total=total, page=page, page_size=page_size
+        data=datas, total=total, page=page, page_size=page_size
     )
 
 

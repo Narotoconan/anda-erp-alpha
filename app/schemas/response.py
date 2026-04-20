@@ -55,7 +55,7 @@ class PageInfo(BaseModel):
 
 class PageResult(BaseModel, Generic[T]):
     """分页数据载体"""
-    items: List[T] = Field(default_factory=list, description="数据列表")
+    data: List[T] = Field(default_factory=list, description="数据列表")
     pagination: PageInfo = Field(description="分页信息")
 
 
@@ -69,7 +69,7 @@ class PageResponseSchema(BaseModel, Generic[T]):
     def ok(
         cls,
         *,
-        items: List[Any],
+        data: List[Any],
         total: int,
         page: int = 1,
         page_size: int = 10,
@@ -88,7 +88,7 @@ class PageResponseSchema(BaseModel, Generic[T]):
         return cls(
             code=0,
             message=message,
-            result=PageResult(items=items, pagination=pagination),
+            result=PageResult(data=data, pagination=pagination),
         )
 
 
