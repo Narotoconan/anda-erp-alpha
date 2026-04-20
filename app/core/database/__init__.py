@@ -18,12 +18,12 @@ Base = _pgsql.Base
 
 
 def db_first_connection():
-    log.info("Database first connection")
+    log.info("✅ 数据库 连接成功")
 
 
 async def db_disconnect():
     await _pgsql.disconnect()
-    log.info("数据库连接已关闭！")
+    log.info("✅ 数据库 已断开连接")
 
 
 __all__ = [

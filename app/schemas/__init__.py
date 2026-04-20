@@ -1,3 +1,4 @@
+from app.schemas.base_schema import BaseSchema
 from app.schemas.response import (
     ResponseSchema,
     PageResponseSchema,
@@ -7,6 +8,7 @@ from app.schemas.response import (
 )
 
 __all__ = [
+    "BaseSchema",
     "ResponseSchema",
     "PageResponseSchema",
     "PageResult",

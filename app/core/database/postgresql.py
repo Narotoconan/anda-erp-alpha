@@ -37,7 +37,7 @@ class AsyncPgSql:
                 pool_pre_ping=True,  # 在每次从连接池中获取连接时先发送一个简单的查询
                 pool_recycle=300,  # 设置连接的最大空闲时间为 300 秒
                 pool_timeout=30,  # 设置从连接池获取连接的超时时间为 30 秒
-                echo_pool=True,  # 调试连接池行为
+                echo_pool=False,  # 生产环境关闭连接池调试日志
                 connect_args={
                     "command_timeout": 60,  # 连接超时时间
                     "timeout": 30,  # 操作超时时间（秒）
@@ -60,6 +60,13 @@ class AsyncPgSql:
             scopefunc=current_task
         )
 
+    def db_first_connection():
+        log.info(
+            f"✅ 数据库 连接成功 - "
+            f"主机:{cache_config.REDIS_HOST} | "
+            f"端口:{cache_config.REDIS_PORT} | "
+            f"数据库:{cache_config.REDIS_DB}"
+        )
 
     async def disconnect(self) -> None:
         if self.__engine:
