@@ -97,9 +97,10 @@ _ERROR_TYPE_MAP: dict[str, str | Callable[[dict], str]] = {
     "string_pattern_mismatch":  "格式不正确，请检查输入内容",
 
     # ----- 枚举 / 字面量 -----
-    "enum":                     lambda ctx: f"不在允许范围内，可选值为: {ctx.get('expected', '?')}",
-    # literal_error: Literal[...] 字段校验失败，ctx["expected"] 为允许值描述字符串
-    "literal_error":            lambda ctx: f"只能是以下值之一: {ctx.get('expected', '?')}",
+    # 不透传 ctx["expected"]，避免将内部枚举值/字面量约束暴露给客户端
+    # 合法值信息应由 OpenAPI 文档（/docs）承载，而非错误响应
+    "enum":                     "参数值不合法，请传入有效选项",
+    "literal_error":            "参数值不合法，请传入有效选项",
 
     # ----- JSON -----
     "json_invalid":             "必须是合法的 JSON 格式",
