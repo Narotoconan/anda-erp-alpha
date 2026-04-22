@@ -13,8 +13,8 @@ from app.exceptions import BizException, NotFoundException, AuthException, Forbi
 | 异常类 | HTTP 状态码 | 业务错误码 | 适用场景 |
 |---|---|---|---|
 | `BizException` | 自定义(默认200) | 自定义(默认-1) | 通用业务异常基类 |
-| `AuthException` | 401 | 1001 | 未登录 / Token 无效 |
-| `ForbiddenException` | 403 | 1004 | 权限不足 |
+| `AuthException` | 401 | 1001 | 未登录 / Token 失效 |
+| `ForbiddenException` | 403 | 1002 | 权限不足 |
 | `NotFoundException` | 404 | 3001 | 资源不存在 |
 | `ParamsException` | 422 | 2001 | 参数校验失败 |
 
@@ -97,30 +97,27 @@ class ErrorCode(IntEnum):
     SUCCESS        = 0      # 成功
     FAIL           = -1     # 通用失败
 
-    # 认证/授权 1xxx
-    UNAUTHORIZED   = 1001   # 未登录
-    TOKEN_EXPIRED  = 1002   # Token 过期
-    TOKEN_INVALID  = 1003   # Token 无效
-    FORBIDDEN      = 1004   # 权限不足
+    # 认证/授权 1xxx（前端需差异化跳转）
+    UNAUTHORIZED   = 1001   # 未登录或 Token 失效 → 跳转登录页
+    FORBIDDEN      = 1002   # 已登录但无权限 → 显示无权限提示
 
     # 参数校验 2xxx
-    PARAMS_INVALID = 2001   # 参数不合法
-    PARAMS_MISSING = 2002   # 缺少参数
+    PARAMS_INVALID = 2001   # 参数不合法 → 前端表单提示
 
     # 资源 3xxx
     NOT_FOUND      = 3001   # 资源不存在
-    ALREADY_EXISTS = 3002   # 资源已存在
-    RESOURCE_GONE  = 3003   # 资源已删除
+    ALREADY_EXISTS = 3002   # 资源已存在（注册、创建时）
 
-    # 第三方 4xxx
-    THIRD_PARTY_ERROR   = 4001
-    THIRD_PARTY_TIMEOUT = 4002
+    # 第三方服务 4xxx
+    THIRD_PARTY_ERROR = 4001  # 第三方调用失败（含超时）→ 提示稍后重试
 
     # 系统 5xxx
-    INTERNAL_ERROR = 5001   # 系统内部错误
-    DATABASE_ERROR = 5002   # 数据库异常
-    CACHE_ERROR    = 5003   # 缓存异常
+    INTERNAL_ERROR = 5001   # 系统内部错误（含 DB/Cache）→ 提示服务器繁忙
 ```
+
+> **为什么这么少？** 错误码粒度以「前端是否需要差异化处理」为准。
+> TOKEN_EXPIRED / TOKEN_INVALID 和 UNAUTHORIZED 前端处理完全一致，无需单独区分；
+> DATABASE_ERROR / CACHE_ERROR 是服务端内部细节，不应透传给前端，通过日志区分即可。
 
 ---
 

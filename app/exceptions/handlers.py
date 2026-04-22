@@ -91,6 +91,7 @@ async def http_exception_handler(
         404: ErrorCode.NOT_FOUND,
         405: ErrorCode.PARAMS_INVALID,
         422: ErrorCode.PARAMS_INVALID,
+        429: ErrorCode.FAIL,
     }
     code = _STATUS_CODE_MAP.get(exc.status_code, ErrorCode.FAIL)
 

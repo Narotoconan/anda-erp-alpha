@@ -2,8 +2,10 @@ from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 from app.core.cache import get_redis_manager, RedisPrefixes
 from app.schemas.response import ResponseSchema, PageResponseSchema
+from app.schemas.user_schema import UserSearch
 from app.exceptions import BizException, NotFoundException, ErrorCode
 from faker import Faker
+from typing import Annotated
 import io
 
 router_user = APIRouter(prefix="/user", tags=["用户管理"])
@@ -74,5 +76,8 @@ async def error_demo_api(error_type: str = Query(default="biz", description="biz
         raise RuntimeError("模拟系统内部错误")
     return ResponseSchema.ok(message="没有触发异常")
 
+@router_user.get("/search", summary="用户搜索")
+async def search_user(params: Annotated[UserSearch, Query()]):
+    return ResponseSchema.ok(data=params.model_dump())
 
 __all__ = ["router_user"]

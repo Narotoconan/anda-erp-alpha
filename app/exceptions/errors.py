@@ -4,11 +4,14 @@
 错误码规范:
     0       : 成功
     -1      : 通用失败
-    1xxx    : 认证/授权相关
-    2xxx    : 参数校验相关
-    3xxx    : 资源相关
-    4xxx    : 第三方服务相关
-    5xxx    : 系统内部错误
+    1xxx    : 认证/授权相关（前端需跳转登录或显示无权限）
+    2xxx    : 参数校验相关（前端需提示用户修正输入）
+    3xxx    : 资源相关（前端需提示资源状态）
+    4xxx    : 第三方服务相关（前端提示稍后重试）
+    5xxx    : 系统内部错误（前端提示服务器繁忙）
+
+设计原则: 错误码的粒度以「前端是否需要差异化处理」为准，
+         服务端内部的 DB/Cache/Timeout 等细节通过日志区分，不透传给前端。
 """
 
 from enum import IntEnum
@@ -22,28 +25,21 @@ class ErrorCode(IntEnum):
     FAIL = -1
 
     # 认证/授权 1xxx
-    UNAUTHORIZED = 1001
-    TOKEN_EXPIRED = 1002
-    TOKEN_INVALID = 1003
-    FORBIDDEN = 1004
+    UNAUTHORIZED = 1001   # 未登录或 Token 失效 → 前端跳转登录页
+    FORBIDDEN = 1002      # 已登录但无权限 → 前端显示无权限提示
 
     # 参数校验 2xxx
-    PARAMS_INVALID = 2001
-    PARAMS_MISSING = 2002
+    PARAMS_INVALID = 2001  # 参数不合法 → 前端表单错误提示
 
     # 资源 3xxx
-    NOT_FOUND = 3001
-    ALREADY_EXISTS = 3002
-    RESOURCE_GONE = 3003
+    NOT_FOUND = 3001       # 资源不存在 → 前端显示 404
+    ALREADY_EXISTS = 3002  # 资源已存在 → 前端提示"已存在"（注册、创建场景）
 
     # 第三方服务 4xxx
-    THIRD_PARTY_ERROR = 4001
-    THIRD_PARTY_TIMEOUT = 4002
+    THIRD_PARTY_ERROR = 4001  # 第三方调用失败（含超时）→ 前端提示稍后重试
 
     # 系统 5xxx
-    INTERNAL_ERROR = 5001
-    DATABASE_ERROR = 5002
-    CACHE_ERROR = 5003
+    INTERNAL_ERROR = 5001  # 系统内部错误（含 DB/Cache）→ 前端提示服务器繁忙
 
 
 # 错误码 -> 默认消息映射
@@ -51,19 +47,12 @@ _ERROR_MESSAGES: dict[int, str] = {
     ErrorCode.SUCCESS: "success",
     ErrorCode.FAIL: "操作失败",
     ErrorCode.UNAUTHORIZED: "未登录或登录已过期",
-    ErrorCode.TOKEN_EXPIRED: "Token 已过期",
-    ErrorCode.TOKEN_INVALID: "Token 无效",
     ErrorCode.FORBIDDEN: "权限不足",
     ErrorCode.PARAMS_INVALID: "参数校验失败",
-    ErrorCode.PARAMS_MISSING: "缺少必要参数",
     ErrorCode.NOT_FOUND: "资源不存在",
     ErrorCode.ALREADY_EXISTS: "资源已存在",
-    ErrorCode.RESOURCE_GONE: "资源已被删除",
-    ErrorCode.THIRD_PARTY_ERROR: "第三方服务异常",
-    ErrorCode.THIRD_PARTY_TIMEOUT: "第三方服务超时",
-    ErrorCode.INTERNAL_ERROR: "系统内部错误",
-    ErrorCode.DATABASE_ERROR: "数据库异常",
-    ErrorCode.CACHE_ERROR: "缓存服务异常",
+    ErrorCode.THIRD_PARTY_ERROR: "第三方服务异常，请稍后重试",
+    ErrorCode.INTERNAL_ERROR: "系统内部错误，请稍后重试",
 }
 
 
