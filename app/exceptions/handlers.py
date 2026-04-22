@@ -11,14 +11,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.log import log
 
 from app.exceptions.errors import BizException, ErrorCode
+from app.exceptions.validation_i18n import translate_validation_error
 
 
 def _build_error_response(
-    *,
-    http_status: int,
-    code: int,
-    message: str,
-    result: dict | None = None,
+        *,
+        http_status: int,
+        code: int,
+        message: str,
+        result: dict | None = None,
 ) -> JSONResponse:
     """构建统一错误 JSON 响应"""
     return JSONResponse(
@@ -51,34 +52,35 @@ async def biz_exception_handler(_request: Request, exc: BizException) -> JSONRes
 
 
 async def validation_exception_handler(
-    _request: Request, exc: RequestValidationError
+        _request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     """
     Pydantic / FastAPI 参数校验异常处理
-    将原始 errors 信息格式化后放入 message, 方便前端展示
+
+    取第一条校验错误翻译为中文消息写入 message，result 返回空对象。
+    多条错误时仅展示第一条，避免信息过载；完整错误列表通过日志记录。
     """
-    errors = exc.errors()
-    # 取第一条错误的简明描述作为 message
+    # 过滤 Pydantic v2 默认注入的官方文档链接字段，减少日志噪音
+    # 不使用 include_url=False，因为 FastAPI RequestValidationError.errors() 不支持该参数
+    errors = [{k: v for k, v in e.items() if k != "url"} for e in exc.errors()]
     first = errors[0] if errors else {}
-    loc = " -> ".join(str(l) for l in first.get("loc", []))
-    msg = first.get("msg", "参数校验失败")
-    detail = f"{loc}: {msg}" if loc else msg
+    message = translate_validation_error(first) if first else "参数校验失败，请检查输入内容"
 
     log.warning(
-        "ValidationError | path={} detail={}",
+        "ValidationError | 参数错误 | {} | path={} errors={}",
+        message,
         _request.url.path,
-        detail,
+        errors,
     )
     return _build_error_response(
         http_status=status.HTTP_422_UNPROCESSABLE_ENTITY,
         code=ErrorCode.PARAMS_INVALID,
-        message=detail,
-        result={"errors": errors},
+        message=message,
     )
 
 
 async def http_exception_handler(
-    _request: Request, exc: StarletteHTTPException
+        _request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
     """
     Starlette / FastAPI HTTPException 处理
@@ -109,7 +111,7 @@ async def http_exception_handler(
 
 
 async def unhandled_exception_handler(
-    _request: Request, exc: Exception
+        _request: Request, exc: Exception
 ) -> JSONResponse:
     """
     兜底: 未被捕获的异常
@@ -139,4 +141,3 @@ def register_exception_handlers(app: FastAPI) -> None:
 
 
 __all__ = ["register_exception_handlers"]
-
