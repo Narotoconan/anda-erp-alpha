@@ -9,7 +9,7 @@ from config.settings import get_settings
 def register() -> logging.Logger:
     settings = get_settings()
     level = settings.logger.LOG_LEVEL
-    path = f'{settings.app.BASE_PATH}/logs'
+    path = f"{settings.app.BASE_PATH}/logs"
     retention = settings.logger.LOG_RETENTION
     rotation_time = settings.logger.LOG_ROTATION_TIME
 
@@ -59,4 +59,4 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-__all__ = ['register']
+__all__ = ["register"]

@@ -13,4 +13,4 @@ async def lifespan(app: FastAPI):
     await shutdown()
 
 
-__all__ = ['lifespan']
+__all__ = ["lifespan"]

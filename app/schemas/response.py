@@ -26,8 +26,10 @@ T = TypeVar("T")
 
 # ==================== 基础响应模型 ====================
 
+
 class ResponseSchema(BaseSchema):
     """统一响应格式"""
+
     code: int = Field(default=0, description="业务状态码, 0=成功, 非0=失败")
     message: str = Field(default="success", description="响应消息")
     result: Any = Field(default={}, description="响应数据")
@@ -45,8 +47,10 @@ class ResponseSchema(BaseSchema):
 
 # ==================== 分页响应模型 ====================
 
+
 class PageInfo(BaseSchema):
     """分页元信息"""
+
     page: int = Field(description="当前页码")
     page_size: int = Field(description="每页条数")
     total: int = Field(description="总记录数")
@@ -57,12 +61,14 @@ class PageInfo(BaseSchema):
 
 class PageResult[T](BaseSchema):
     """分页数据载体"""
+
     data: list[T] = Field(default_factory=list, description="数据列表")
     pagination: PageInfo = Field(description="分页信息")
 
 
 class PageResponseSchema[T](BaseSchema):
     """分页响应格式"""
+
     code: int = Field(default=0, description="业务状态码")
     message: str = Field(default="success", description="响应消息")
     result: PageResult[T] = Field(description="分页响应数据")
@@ -96,8 +102,10 @@ class PageResponseSchema[T](BaseSchema):
 
 # ==================== 分页请求参数 ====================
 
+
 class PageParams(BaseSchema):
     """分页请求参数(用于 Query / Body 接收)"""
+
     page: int = Field(default=1, ge=1, description="页码, 从1开始")
     page_size: int = Field(default=10, ge=1, le=100, description="每页条数, 最大100")
 
@@ -119,4 +127,3 @@ __all__ = [
     "PageResult",
     "ResponseSchema",
 ]
-

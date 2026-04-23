@@ -19,4 +19,3 @@ __all__ = [
     "get_error_message",
     "register_exception_handlers",
 ]
-

@@ -1,4 +1,5 @@
 """Cache decorators for simple function result caching"""
+
 import functools
 import hashlib
 import inspect
@@ -11,6 +12,7 @@ from app.core.cache.redis import get_redis_manager
 
 def cache(key_prefix: str = "", ttl: int | None = None) -> Callable:
     """Async function result cache decorator with TTL support"""
+
     def decorator(func: Callable) -> Callable:
         if not inspect.iscoroutinefunction(func):
             raise RuntimeError("Cache decorator only supports async functions")
@@ -29,6 +31,7 @@ def cache(key_prefix: str = "", ttl: int | None = None) -> Callable:
             return result
 
         return wrapper
+
     return decorator
 
 
@@ -41,5 +44,4 @@ def _generate_cache_key(func: Callable, prefix: str, args: tuple, kwargs: dict) 
     return f"cache:{key_base}:{param_hash}"
 
 
-__all__ = ['cache']
-
+__all__ = ["cache"]

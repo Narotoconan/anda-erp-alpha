@@ -1,6 +1,7 @@
 """
 Cache module - Redis 异步缓存管理
 """
+
 from app.core.cache.decorators import cache
 from app.core.cache.prefixes import RedisPrefixes
 from app.core.cache.redis import RedisManager, get_redis_manager
@@ -18,6 +19,4 @@ async def close_cache() -> None:
     await redis_manager.disconnect()
 
 
-__all__ = ['RedisManager', 'RedisPrefixes', 'cache', 'close_cache', 'get_redis_manager', 'init_cache']
-
-
+__all__ = ["RedisManager", "RedisPrefixes", "cache", "close_cache", "get_redis_manager", "init_cache"]

@@ -16,27 +16,33 @@ from app.schemas.base_schema import BaseSchema
 
 # ==================== 场景一: 枚举作为必填字段 ====================
 
+
 class UserCreate(BaseSchema):
     """创建用户 - gender 为必填枚举"""
-    username: str       = Field(..., min_length=3, max_length=20, description="用户名")
+
+    username: str = Field(..., min_length=3, max_length=20, description="用户名")
     # 直接声明枚举类型，Pydantic 自动校验值合法性，非 0/1/2 直接 422
-    gender: GenderEnum  = Field(..., description="性别")
-    status: StatusEnum  = Field(default=StatusEnum.ENABLED, description="账户状态")
+    gender: GenderEnum = Field(..., description="性别")
+    status: StatusEnum = Field(default=StatusEnum.ENABLED, description="账户状态")
 
 
 # ==================== 场景二: 枚举作为可选筛选字段 ====================
 
+
 class UserSearch(BaseSchema):
     """查询用户 - 枚举字段作为可选过滤条件"""
-    username: str | None        = Field(default=None, min_length=1, max_length=20, description="用户名，模糊匹配")
-    gender: GenderEnum | None   = Field(default=None, description="性别筛选，不传则查全部")
-    status: StatusEnum | None   = Field(default=None, description="状态筛选，不传则查全部")
+
+    username: str | None = Field(default=None, min_length=1, max_length=20, description="用户名，模糊匹配")
+    gender: GenderEnum | None = Field(default=None, description="性别筛选，不传则查全部")
+    status: StatusEnum | None = Field(default=None, description="状态筛选，不传则查全部")
 
 
 # ==================== 场景三: 枚举在响应 Schema 中使用 ====================
 
+
 class UserResponse(BaseSchema):
     """用户响应体 - use_enum_values=True 保证序列化为原始值（int/str）"""
+
     id: int
     username: str
     # 响应中同样使用枚举类型，序列化时自动输出 .value（如 1），而非枚举成员名

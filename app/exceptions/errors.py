@@ -25,14 +25,14 @@ class ErrorCode(IntEnum):
     FAIL = -1
 
     # 认证/授权 1xxx
-    UNAUTHORIZED = 1001   # 未登录或 Token 失效 → 前端跳转登录页
-    FORBIDDEN = 1002      # 已登录但无权限 → 前端显示无权限提示
+    UNAUTHORIZED = 1001  # 未登录或 Token 失效 → 前端跳转登录页
+    FORBIDDEN = 1002  # 已登录但无权限 → 前端显示无权限提示
 
     # 参数校验 2xxx
     PARAMS_INVALID = 2001  # 参数不合法 → 前端表单错误提示
 
     # 资源 3xxx
-    NOT_FOUND = 3001       # 资源不存在 → 前端显示 404
+    NOT_FOUND = 3001  # 资源不存在 → 前端显示 404
     ALREADY_EXISTS = 3002  # 资源已存在 → 前端提示"已存在"（注册、创建场景）
 
     # 第三方服务 4xxx
@@ -128,4 +128,3 @@ __all__ = [
     "ParamsException",
     "get_error_message",
 ]
-

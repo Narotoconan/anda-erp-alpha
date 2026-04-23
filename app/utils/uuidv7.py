@@ -100,7 +100,7 @@ class UUIDv7:
         uuid_bytes = bytearray(16)
 
         # 时间戳转为字节 (48位 = 6字节)
-        timestamp_bytes = timestamp_ms.to_bytes(6, byteorder='big')
+        timestamp_bytes = timestamp_ms.to_bytes(6, byteorder="big")
         uuid_bytes[0:6] = timestamp_bytes
 
         # 版本(4位)和计数器高4位 (总共8位 = 1字节)
@@ -180,13 +180,13 @@ class UUIDv7:
 
         # 提取时间戳字节（前6字节）
         timestamp_bytes = uuid_obj.bytes[:6]
-        timestamp_ms = int.from_bytes(timestamp_bytes, byteorder='big')
+        timestamp_ms = int.from_bytes(timestamp_bytes, byteorder="big")
 
         # 转换为datetime对象
         try:
             return datetime.datetime.fromtimestamp(timestamp_ms / 1000.0)
         except (ValueError, OverflowError) as e:
-            raise ValueError(f"无效的时间戳值: {timestamp_ms}, 错误: {e}")  from None
+            raise ValueError(f"无效的时间戳值: {timestamp_ms}, 错误: {e}") from None
 
     # 添加多线程支持的方法
     @staticmethod
@@ -200,6 +200,7 @@ class UUIDv7:
             该方法需要threading模块支持。
         """
         import threading
+
         UUIDv7._mutex_lock = threading.Lock()
 
 

@@ -7,4 +7,4 @@ async def startup():
     await init_cache()
 
 
-__all__ = ['startup']
+__all__ = ["startup"]

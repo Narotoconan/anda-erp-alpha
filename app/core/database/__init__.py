@@ -10,7 +10,7 @@ _pgsql = AsyncPgSql(
     port=settings.database.DB_PORT,
     user=settings.database.DB_USER,
     password=settings.database.DB_PASSWORD,
-    database=settings.database.DB_DATABASE
+    database=settings.database.DB_DATABASE,
 )
 
 AsyncSessionLocal = _pgsql.AsyncSessionLocal
@@ -26,9 +26,4 @@ async def db_disconnect():
     log.info("✅ 数据库 已断开连接")
 
 
-__all__ = [
-    "AsyncSessionLocal",
-    "Base",
-    "db_disconnect",
-    "db_first_connection"
-]
+__all__ = ["AsyncSessionLocal", "Base", "db_disconnect", "db_first_connection"]

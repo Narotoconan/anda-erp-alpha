@@ -18,6 +18,7 @@ settings = get_settings()
 
 class Base(DeclarativeBase):
     """SQLAlchemy 2.0+ 声明式基类"""
+
     pass
 
 
@@ -71,4 +72,4 @@ class AsyncPgSql:
             await self.__engine.dispose()
 
 
-__all__ = ['AsyncPgSql']
+__all__ = ["AsyncPgSql"]

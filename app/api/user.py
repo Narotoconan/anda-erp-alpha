@@ -11,7 +11,7 @@ from app.schemas.response import PageResponseSchema, ResponseSchema
 from app.schemas.user_schema import UserSearch
 
 router_user = APIRouter(prefix="/user", tags=["用户管理"])
-fake = Faker('zh_CN')
+fake = Faker("zh_CN")
 
 
 @router_user.get("/list", summary="用户列表(分页)")
@@ -24,9 +24,7 @@ async def get_user_list_api(
     total = 56
     datas = [{"name": fake.name(), "email": fake.email()} for _ in range(page_size)]
 
-    return PageResponseSchema.ok(
-        data=datas, total=total, page=page, page_size=page_size
-    )
+    return PageResponseSchema.ok(data=datas, total=total, page=page, page_size=page_size)
 
 
 @router_user.get("/detail", summary="用户详情")
@@ -37,9 +35,7 @@ async def get_user_detail_api(user_id: int = Query(..., description="用户ID"))
 
     redis_manager = get_redis_manager()
     data = {"id": user_id, "name": fake.name(), "email": fake.email()}
-    await redis_manager.hset(
-        f"{RedisPrefixes.USER_PROFILE}:{data.get('name')}", data, ex=120
-    )
+    await redis_manager.hset(f"{RedisPrefixes.USER_PROFILE}:{data.get('name')}", data, ex=120)
     return ResponseSchema.ok(data=data)
 
 
@@ -72,16 +68,17 @@ async def error_demo_api(error_type: str = Query(default="biz", description="biz
         raise BizException(ErrorCode.FAIL, message="这是一个业务异常示例")
     elif error_type == "auth":
         from app.exceptions import AuthException
+
         raise AuthException(message="请先登录")
     elif error_type == "internal":
         # 触发未处理异常，走兜底 handler
         raise RuntimeError("模拟系统内部错误")
     return ResponseSchema.ok(message="没有触发异常")
 
+
 @router_user.get("/search", summary="用户搜索")
-async def search_user(
-        params: Annotated[UserSearch, Query()]
-):
+async def search_user(params: Annotated[UserSearch, Query()]):
     return ResponseSchema.ok(data=params.model_dump())
+
 
 __all__ = ["router_user"]

@@ -11,4 +11,4 @@ def register_log():
         log = register()
 
 
-__all__ = ['log', 'register_log']
+__all__ = ["log", "register_log"]

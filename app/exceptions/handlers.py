@@ -2,6 +2,7 @@
 全局异常处理器
 注册到 FastAPI app 后，所有异常会被统一拦截并转换为标准 JSON 响应格式。
 """
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse

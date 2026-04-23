@@ -7,4 +7,4 @@ async def shutdown():
     await close_cache()
 
 
-__all__ = ['shutdown']
+__all__ = ["shutdown"]

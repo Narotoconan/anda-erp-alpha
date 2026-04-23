@@ -2,6 +2,7 @@
 Redis 异步连接管理器 - 轻量级设计
 支持自动连接池、异步操作、JSON 序列化、连接保活
 """
+
 import asyncio
 import json
 from typing import Any, Optional
@@ -16,7 +17,7 @@ from config.settings import get_settings
 class RedisManager:
     """Redis 异步连接管理器"""
 
-    _instance: Optional['RedisManager'] = None
+    _instance: Optional["RedisManager"] = None
     _pool: ConnectionPool | None = None
     _client: Redis | None = None
     _heartbeat_task: asyncio.Task | None = None
@@ -25,7 +26,7 @@ class RedisManager:
     _reconnect_count: int = 0  # 重连计数
     _max_reconnect_attempts: int = 5  # 最大重连次数
 
-    def __new__(cls) -> 'RedisManager':
+    def __new__(cls) -> "RedisManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -72,7 +73,7 @@ class RedisManager:
                 max_connections=cache_config.REDIS_MAX_CONNECTIONS,
                 socket_connect_timeout=cache_config.REDIS_TIMEOUT,
                 socket_keepalive=True,
-                decode_responses=True
+                decode_responses=True,
             )
 
             # 创建 Redis 客户端
@@ -580,4 +581,4 @@ def get_redis_manager() -> RedisManager:
     return _redis_manager
 
 
-__all__ = ['RedisManager', 'get_redis_manager']
+__all__ = ["RedisManager", "get_redis_manager"]

@@ -61,5 +61,4 @@ class RedisPrefixes:
     """热门数据缓存"""
 
 
-__all__ = ['RedisPrefixes']
-
+__all__ = ["RedisPrefixes"]

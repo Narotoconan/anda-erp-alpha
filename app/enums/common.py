@@ -13,25 +13,26 @@ from enum import IntEnum
 
 # ==================== 性别 ====================
 
+
 class GenderEnum(IntEnum):
     """性别"""
+
     UNKNOWN = 0  # 未知
-    MALE    = 1  # 男
-    FEMALE  = 2  # 女
+    MALE = 1  # 男
+    FEMALE = 2  # 女
 
 
 # ==================== 通用启用/禁用状态 ====================
 
+
 class StatusEnum(IntEnum):
     """通用启用/禁用状态"""
+
     DISABLED = 0  # 禁用
-    ENABLED  = 1  # 启用
-
-
+    ENABLED = 1  # 启用
 
 
 __all__ = [
     "GenderEnum",
     "StatusEnum",
 ]
-
