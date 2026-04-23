@@ -66,12 +66,7 @@ async def validation_exception_handler(
     first = errors[0] if errors else {}
     message = translate_validation_error(first) if first else "参数校验失败，请检查输入内容"
 
-    log.warning(
-        "ValidationError | 参数错误 | {} | path={} errors={}",
-        message,
-        _request.url.path,
-        errors,
-    )
+    log.warning("ValidationError | path={} | {}", _request.url.path, message)
     return _build_error_response(
         http_status=status.HTTP_422_UNPROCESSABLE_ENTITY,
         code=ErrorCode.PARAMS_INVALID,

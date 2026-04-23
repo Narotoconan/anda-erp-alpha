@@ -77,7 +77,9 @@ async def error_demo_api(error_type: str = Query(default="biz", description="biz
     return ResponseSchema.ok(message="没有触发异常")
 
 @router_user.get("/search", summary="用户搜索")
-async def search_user(params: Annotated[UserSearch, Query()]):
+async def search_user(
+        params: Annotated[UserSearch, Query()]
+):
     return ResponseSchema.ok(data=params.model_dump())
 
 __all__ = ["router_user"]
