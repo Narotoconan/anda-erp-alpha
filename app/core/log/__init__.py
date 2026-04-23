@@ -1,8 +1,8 @@
-from .log_loguru import register
 from logging import Logger
-from typing import Optional
 
-log: Optional[Logger] = None
+from .log_loguru import register
+
+log: Logger | None = None
 
 
 def register_log():
@@ -11,4 +11,4 @@ def register_log():
         log = register()
 
 
-__all__ = ['register_log', 'log']
+__all__ = ['log', 'register_log']

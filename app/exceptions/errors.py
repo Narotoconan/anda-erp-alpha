@@ -120,12 +120,12 @@ class ParamsException(BizException):
 
 
 __all__ = [
-    "ErrorCode",
-    "get_error_message",
-    "BizException",
     "AuthException",
+    "BizException",
+    "ErrorCode",
     "ForbiddenException",
     "NotFoundException",
     "ParamsException",
+    "get_error_message",
 ]
 

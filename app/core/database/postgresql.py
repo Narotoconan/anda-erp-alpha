@@ -1,15 +1,19 @@
+from asyncio import current_task
+
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
-    async_sessionmaker,
-    async_scoped_session,
-    AsyncSession,
     AsyncEngine,
+    AsyncSession,
+    async_scoped_session,
+    async_sessionmaker,
+    create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.exc import SQLAlchemyError
-from asyncio import current_task
-from typing import Optional
+
 from app.core.log import log
+from config.settings import get_settings
+
+settings = get_settings()
 
 
 class Base(DeclarativeBase):
@@ -21,8 +25,8 @@ class AsyncPgSql:
     def __init__(self, host: str, port: int, user: str, password: str, database: str):
         self.__DATABASE_URL = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
 
-        self.__engine: Optional[AsyncEngine] = None
-        self.AsyncSessionLocal: Optional[async_scoped_session[AsyncSession]] = None
+        self.__engine: AsyncEngine | None = None
+        self.AsyncSessionLocal: async_scoped_session[AsyncSession] | None = None
         self.Base = Base
 
         self.__create_engine()
@@ -41,31 +45,25 @@ class AsyncPgSql:
                 connect_args={
                     "command_timeout": 60,  # 连接超时时间
                     "timeout": 30,  # 操作超时时间（秒）
-                }
+                },
             )
         except SQLAlchemyError as e:
-            log.error(f"数据库引擎创建失败！")
+            log.error("数据库引擎创建失败！")
             raise e
 
     def __create_session(self) -> async_scoped_session[AsyncSession]:
         _async_session = async_sessionmaker(
-            bind=self.__engine,
-            class_=AsyncSession,
-            expire_on_commit=False,
-            autoflush=True,
-            autocommit=False
+            bind=self.__engine, class_=AsyncSession, expire_on_commit=False, autoflush=True, autocommit=False
         )
-        return async_scoped_session(
-            session_factory=_async_session,
-            scopefunc=current_task
-        )
+        return async_scoped_session(session_factory=_async_session, scopefunc=current_task)
 
+    @staticmethod
     def db_first_connection():
         log.info(
             f"✅ 数据库 连接成功 - "
-            f"主机:{cache_config.REDIS_HOST} | "
-            f"端口:{cache_config.REDIS_PORT} | "
-            f"数据库:{cache_config.REDIS_DB}"
+            f"主机:{settings.cache.REDIS_HOST} | "
+            f"端口:{settings.cache.REDIS_PORT} | "
+            f"数据库:{settings.cache.REDIS_DB}"
         )
 
     async def disconnect(self) -> None:

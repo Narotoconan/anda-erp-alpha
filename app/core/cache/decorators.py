@@ -1,17 +1,19 @@
 """Cache decorators for simple function result caching"""
 import functools
-import inspect
 import hashlib
+import inspect
 import json
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
+
 from app.core.cache.redis import get_redis_manager
 
 
-def cache(key_prefix: str = "", ttl: Optional[int] = None) -> Callable:
+def cache(key_prefix: str = "", ttl: int | None = None) -> Callable:
     """Async function result cache decorator with TTL support"""
     def decorator(func: Callable) -> Callable:
         if not inspect.iscoroutinefunction(func):
-            raise RuntimeError(f"Cache decorator only supports async functions")
+            raise RuntimeError("Cache decorator only supports async functions")
 
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> Any:

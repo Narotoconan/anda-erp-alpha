@@ -1,8 +1,8 @@
-import uuid
-import time
-import secrets
 import datetime
-from typing import Optional, Union
+import secrets
+import time
+import uuid
+from typing import Union
 
 
 class UUIDv7:
@@ -21,7 +21,7 @@ class UUIDv7:
     _mutex_lock = None  # 在多线程环境下可以使用锁
 
     @classmethod
-    def generate(cls, timestamp_ms: Optional[int] = None) -> uuid.UUID:
+    def generate(cls, timestamp_ms: int | None = None) -> uuid.UUID:
         """
         生成一个UUID v7对象。
 
@@ -122,7 +122,7 @@ class UUIDv7:
         return uuid.UUID(bytes=bytes(uuid_bytes))
 
     @classmethod
-    def generate_str(cls, timestamp_ms: Optional[int] = None) -> str:
+    def generate_str(cls, timestamp_ms: int | None = None) -> str:
         """
         生成UUID v7并返回其字符串表示。
 
@@ -168,7 +168,7 @@ class UUIDv7:
             try:
                 uuid_obj = uuid.UUID(uuid_v7)
             except ValueError as e:
-                raise ValueError(f"提供的UUID字符串格式不正确: {e}")
+                raise ValueError(f"提供的UUID字符串格式不正确: {e}") from None
         elif isinstance(uuid_v7, uuid.UUID):
             uuid_obj = uuid_v7
         else:
@@ -186,7 +186,7 @@ class UUIDv7:
         try:
             return datetime.datetime.fromtimestamp(timestamp_ms / 1000.0)
         except (ValueError, OverflowError) as e:
-            raise ValueError(f"无效的时间戳值: {timestamp_ms}, 错误: {e}")
+            raise ValueError(f"无效的时间戳值: {timestamp_ms}, 错误: {e}")  from None
 
     # 添加多线程支持的方法
     @staticmethod
@@ -204,8 +204,3 @@ class UUIDv7:
 
 
 __all__ = ["UUIDv7"]
-
-if __name__ == '__main__':
-    uuid7 = UUIDv7.generate()
-    print(f"UUID v7: {uuid7}")
-    print(f"Timestamp: {UUIDv7.get_timestamp(uuid7)}")

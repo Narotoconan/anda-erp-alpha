@@ -2,24 +2,26 @@
 Redis 异步连接管理器 - 轻量级设计
 支持自动连接池、异步操作、JSON 序列化、连接保活
 """
-import json
 import asyncio
+import json
 from typing import Any, Optional
+
 import redis.asyncio as redis
-from redis.asyncio import Redis, ConnectionPool
-from config.settings import get_settings
+from redis.asyncio import ConnectionPool, Redis
+
 from app.core.log import log
+from config.settings import get_settings
 
 
 class RedisManager:
     """Redis 异步连接管理器"""
 
     _instance: Optional['RedisManager'] = None
-    _pool: Optional[ConnectionPool] = None
-    _client: Optional[Redis] = None
-    _heartbeat_task: Optional[asyncio.Task] = None
+    _pool: ConnectionPool | None = None
+    _client: Redis | None = None
+    _heartbeat_task: asyncio.Task | None = None
     _heartbeat_interval: int = 30  # 心跳间隔（秒）
-    _redis_prefix: Optional[str] = None  # Redis 键前缀
+    _redis_prefix: str | None = None  # Redis 键前缀
     _reconnect_count: int = 0  # 重连计数
     _max_reconnect_attempts: int = 5  # 最大重连次数
 
@@ -169,7 +171,7 @@ class RedisManager:
 
     # ==================== Key-Value 操作 ====================
 
-    async def set(self, key: str, value: Any, ex: Optional[int] = None) -> bool:
+    async def set(self, key: str, value: Any, ex: int | None = None) -> bool:
         """
         设置缓存值
         :param key: 缓存键（自动添加项目前缀）
@@ -268,7 +270,7 @@ class RedisManager:
 
     # ==================== 批量操作 ====================
 
-    async def mset(self, data: dict[str, Any], ex: Optional[int] = None) -> bool:
+    async def mset(self, data: dict[str, Any], ex: int | None = None) -> bool:
         """
         批量设置缓存
         :param data: {key: value, ...}（key自动添加项目前缀）
@@ -322,7 +324,7 @@ class RedisManager:
 
     # ==================== 哈希操作 ====================
 
-    async def hset(self, name: str, mapping: dict[str, Any], ex: Optional[int] = None) -> int:
+    async def hset(self, name: str, mapping: dict[str, Any], ex: int | None = None) -> int:
         """
         设置哈希字段
         :param name: 哈希键名（自动添加项目前缀）
@@ -384,7 +386,7 @@ class RedisManager:
 
     # ==================== 列表操作 ====================
 
-    async def lpush(self, name: str, *values: Any, ex: Optional[int] = None) -> int:
+    async def lpush(self, name: str, *values: Any, ex: int | None = None) -> int:
         """从列表左端推入值
         :param name: 列表键名（自动添加项目前缀）
         :param values: 要推入的值
@@ -406,7 +408,7 @@ class RedisManager:
             log.error(f"❌ 列表左推失败 ({name}): {e}")
             raise
 
-    async def rpush(self, name: str, *values: Any, ex: Optional[int] = None) -> int:
+    async def rpush(self, name: str, *values: Any, ex: int | None = None) -> int:
         """从列表右端推入值
         :param name: 列表键名（自动添加项目前缀）
         :param values: 要推入的值
@@ -468,7 +470,7 @@ class RedisManager:
 
     # ==================== 集合操作 ====================
 
-    async def sadd(self, name: str, *members: Any, ex: Optional[int] = None) -> int:
+    async def sadd(self, name: str, *members: Any, ex: int | None = None) -> int:
         """添加集合成员
         :param name: 集合键名（自动添加项目前缀）
         :param members: 要添加的成员
@@ -567,7 +569,7 @@ class RedisManager:
 
 
 # 全局单例
-_redis_manager: Optional[RedisManager] = None
+_redis_manager: RedisManager | None = None
 
 
 def get_redis_manager() -> RedisManager:

@@ -1,5 +1,5 @@
-from app.core.database import db_disconnect
 from app.core.cache import close_cache
+from app.core.database import db_disconnect
 
 
 async def shutdown():

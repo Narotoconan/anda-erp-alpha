@@ -1,6 +1,7 @@
+from datetime import datetime
+
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
-from datetime import datetime
 
 
 class BaseSchema(PydanticBaseModel):

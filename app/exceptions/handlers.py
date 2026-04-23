@@ -1,25 +1,23 @@
 """
 全局异常处理器
-
 注册到 FastAPI app 后，所有异常会被统一拦截并转换为标准 JSON 响应格式。
 """
-
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from app.core.log import log
 
+from app.core.log import log
 from app.exceptions.errors import BizException, ErrorCode
 from app.exceptions.validation_i18n import translate_validation_error
 
 
 def _build_error_response(
-        *,
-        http_status: int,
-        code: int,
-        message: str,
-        result: dict | None = None,
+    *,
+    http_status: int,
+    code: int,
+    message: str,
+    result: dict | None = None,
 ) -> JSONResponse:
     """构建统一错误 JSON 响应"""
     return JSONResponse(
@@ -51,9 +49,7 @@ async def biz_exception_handler(_request: Request, exc: BizException) -> JSONRes
     )
 
 
-async def validation_exception_handler(
-        _request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def validation_exception_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
     """
     Pydantic / FastAPI 参数校验异常处理
 
@@ -74,9 +70,7 @@ async def validation_exception_handler(
     )
 
 
-async def http_exception_handler(
-        _request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def http_exception_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """
     Starlette / FastAPI HTTPException 处理
     将框架原生的 HTTP 异常也转换为统一格式
@@ -105,9 +99,7 @@ async def http_exception_handler(
     )
 
 
-async def unhandled_exception_handler(
-        _request: Request, exc: Exception
-) -> JSONResponse:
+async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
     """
     兜底: 未被捕获的异常
     生产环境隐藏堆栈，仅记录日志

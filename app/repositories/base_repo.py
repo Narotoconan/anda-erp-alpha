@@ -1,13 +1,14 @@
-from sqlalchemy.sql import Select, Update, Insert, Delete
-from sqlalchemy.sql.compiler import SQLCompiler
+from typing import ClassVar, Union
+
 from sqlalchemy.orm import Query
-from typing import Union
+from sqlalchemy.sql import Delete, Insert, Select, Update
+from sqlalchemy.sql.compiler import SQLCompiler
 
 SQL = Union[Select, Update, Insert, Delete]
 
 
 class BaseRepository:
-    _instances = {}
+    _instances: ClassVar[dict] = {}
 
     def __new__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -24,8 +25,6 @@ class BaseRepository:
         elif isinstance(sql, SQL):
             _ = sql
         else:
-            raise TypeError('sql must be Query or SQL')
+            raise TypeError("sql must be Query or SQL")
 
-        return _.compile(
-            compile_kwargs={"literal_binds": True}
-        )
+        return _.compile(compile_kwargs={"literal_binds": True})

@@ -15,9 +15,10 @@
     return ResponseSchema.fail(message="参数错误", code=-1)
 """
 
-from typing import Any, Generic, List, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import Field
+
 from app.schemas.base_schema import BaseSchema
 
 T = TypeVar("T")
@@ -54,13 +55,13 @@ class PageInfo(BaseSchema):
     has_prev: bool = Field(description="是否有上一页")
 
 
-class PageResult(BaseSchema, Generic[T]):
+class PageResult[T](BaseSchema):
     """分页数据载体"""
-    data: List[T] = Field(default_factory=list, description="数据列表")
+    data: list[T] = Field(default_factory=list, description="数据列表")
     pagination: PageInfo = Field(description="分页信息")
 
 
-class PageResponseSchema(BaseSchema, Generic[T]):
+class PageResponseSchema[T](BaseSchema):
     """分页响应格式"""
     code: int = Field(default=0, description="业务状态码")
     message: str = Field(default="success", description="响应消息")
@@ -70,7 +71,7 @@ class PageResponseSchema(BaseSchema, Generic[T]):
     def ok(
         cls,
         *,
-        data: List[Any],
+        data: list[Any],
         total: int,
         page: int = 1,
         page_size: int = 10,
@@ -112,10 +113,10 @@ class PageParams(BaseSchema):
 
 
 __all__ = [
-    "ResponseSchema",
-    "PageResponseSchema",
-    "PageResult",
     "PageInfo",
     "PageParams",
+    "PageResponseSchema",
+    "PageResult",
+    "ResponseSchema",
 ]
 

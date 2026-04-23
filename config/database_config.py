@@ -1,8 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        enable_decoding='utf-8'
+        env_file_encoding='utf-8'
     )
     DB_HOST: str = 'localhost'
     DB_PORT: int = 5432

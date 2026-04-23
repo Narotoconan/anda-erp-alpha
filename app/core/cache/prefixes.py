@@ -17,7 +17,7 @@ class RedisPrefixes:
     # ==================== 用户模块 ====================
     USER_PROFILE = "user:profile"
     """用户档案信息
-    
+
     使用示例:
         key = f'{RedisPrefixes.USER_PROFILE}:1'
         await redis.set(key, user_data)

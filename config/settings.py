@@ -1,11 +1,12 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
 from functools import lru_cache
-from .app_config import AppSettings
-from .database_config import DatabaseSettings
-from  .logger_config import LoggerSettings
-from .cache_config import CacheSettings
 
+from pydantic import Field
+from pydantic_settings import BaseSettings
+
+from .app_config import AppSettings
+from .cache_config import CacheSettings
+from .database_config import DatabaseSettings
+from .logger_config import LoggerSettings
 
 
 class Settings(BaseSettings):

@@ -1,12 +1,14 @@
+import io
+from typing import Annotated
+
+from faker import Faker
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
-from app.core.cache import get_redis_manager, RedisPrefixes
-from app.schemas.response import ResponseSchema, PageResponseSchema
+
+from app.core.cache import RedisPrefixes, get_redis_manager
+from app.exceptions import BizException, ErrorCode, NotFoundException
+from app.schemas.response import PageResponseSchema, ResponseSchema
 from app.schemas.user_schema import UserSearch
-from app.exceptions import BizException, NotFoundException, ErrorCode
-from faker import Faker
-from typing import Annotated
-import io
 
 router_user = APIRouter(prefix="/user", tags=["用户管理"])
 fake = Faker('zh_CN')

@@ -9,11 +9,10 @@
     3. FastAPI 会根据枚举类型自动生成 OpenAPI 文档的 enum 约束，无需额外描述
 """
 
-from typing import Optional
 from pydantic import Field
-from app.schemas.base_schema import BaseSchema
-from app.enums.common import GenderEnum, StatusEnum
 
+from app.enums.common import GenderEnum, StatusEnum
+from app.schemas.base_schema import BaseSchema
 
 # ==================== 场景一: 枚举作为必填字段 ====================
 
@@ -29,9 +28,9 @@ class UserCreate(BaseSchema):
 
 class UserSearch(BaseSchema):
     """查询用户 - 枚举字段作为可选过滤条件"""
-    username: Optional[str]        = Field(default=None, min_length=1, max_length=20, description="用户名，模糊匹配")
-    gender: Optional[GenderEnum]   = Field(default=None, description="性别筛选，不传则查全部")
-    status: Optional[StatusEnum]   = Field(default=None, description="状态筛选，不传则查全部")
+    username: str | None        = Field(default=None, min_length=1, max_length=20, description="用户名，模糊匹配")
+    gender: GenderEnum | None   = Field(default=None, description="性别筛选，不传则查全部")
+    status: StatusEnum | None   = Field(default=None, description="状态筛选，不传则查全部")
 
 
 # ==================== 场景三: 枚举在响应 Schema 中使用 ====================
@@ -47,6 +46,6 @@ class UserResponse(BaseSchema):
 
 __all__ = [
     "UserCreate",
-    "UserSearch",
     "UserResponse",
+    "UserSearch",
 ]

@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from .startup import startup
+
 from .shutdown import shutdown
+from .startup import startup
 
 
 @asynccontextmanager

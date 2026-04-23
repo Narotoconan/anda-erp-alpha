@@ -1,6 +1,8 @@
-import sys
 import logging
+import sys
+
 from loguru import logger
+
 from config.settings import get_settings
 
 

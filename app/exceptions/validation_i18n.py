@@ -165,5 +165,5 @@ def translate_validation_error(error: dict) -> str:
     return f"{field}: {cn_message}" if field else cn_message
 
 
-__all__ = ["translate_validation_error", "format_field_loc"]
+__all__ = ["format_field_loc", "translate_validation_error"]
 

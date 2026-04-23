@@ -1,7 +1,7 @@
-from .postgresql import AsyncPgSql
-from config.settings import get_settings
 from app.core.log import log
+from config.settings import get_settings
 
+from .postgresql import AsyncPgSql
 
 settings = get_settings()
 
@@ -29,6 +29,6 @@ async def db_disconnect():
 __all__ = [
     "AsyncSessionLocal",
     "Base",
-    "db_first_connection",
-    "db_disconnect"
+    "db_disconnect",
+    "db_first_connection"
 ]
