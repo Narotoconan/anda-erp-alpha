@@ -22,7 +22,7 @@
 
 ## 4. 代码风格 (Ruff)
 - **工具**: 项目使用 [Ruff](https://docs.astral.sh/ruff/) 进行代码检查（Lint）与格式化（Format），配置位于 `pyproject.toml` 的 `[tool.ruff]` 节。
-- **执行**: `uv run ruff check .` 检查；`uv run ruff format .` 格式化；不可使用`uv run ruff check . --fix` 自动修复，--fix允许人工处理。
+- **执行**: `uv run ruff check .` 检查；`uv run ruff format .` 格式化；不可直接执行`uv run ruff check . --fix` 自动修复，--fix允需人工手动处理。
 - **生成代码必须通过 Ruff 检查**，不得引入新的 Lint 错误。
 
 ### 关键规则说明

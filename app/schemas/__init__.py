@@ -1,7 +1,7 @@
+from app.dependencies.pagination import PageParams
 from app.schemas.base_schema import BaseSchema
 from app.schemas.response import (
     PageInfo,
-    PageParams,
     PageResponseSchema,
     PageResult,
     ResponseSchema,

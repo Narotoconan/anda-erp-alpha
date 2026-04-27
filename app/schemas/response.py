@@ -100,29 +100,8 @@ class PageResponseSchema[T](BaseSchema):
         )
 
 
-# ==================== 分页请求参数 ====================
-
-
-class PageParams(BaseSchema):
-    """分页请求参数(用于 Query / Body 接收)"""
-
-    page: int = Field(default=1, ge=1, description="页码, 从1开始")
-    page_size: int = Field(default=10, ge=1, le=100, description="每页条数, 最大100")
-
-    @property
-    def offset(self) -> int:
-        """计算 SQL OFFSET"""
-        return (self.page - 1) * self.page_size
-
-    @property
-    def limit(self) -> int:
-        """计算 SQL LIMIT"""
-        return self.page_size
-
-
 __all__ = [
     "PageInfo",
-    "PageParams",
     "PageResponseSchema",
     "PageResult",
     "ResponseSchema",
