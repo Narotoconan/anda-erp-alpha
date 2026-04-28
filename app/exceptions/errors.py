@@ -22,7 +22,7 @@ class ErrorCode(IntEnum):
 
     # 通用
     SUCCESS = 0
-    FAIL = -1
+    FAIL = 99999  # 通用失败兜底（无法归类到具体分段时使用）
 
     # 认证/授权 1xxx
     UNAUTHORIZED = 1001  # 未登录或 Token 失效 → 前端跳转登录页
@@ -45,7 +45,7 @@ class ErrorCode(IntEnum):
 # 错误码 -> 默认消息映射
 _ERROR_MESSAGES: dict[int, str] = {
     ErrorCode.SUCCESS: "success",
-    ErrorCode.FAIL: "操作失败",
+    ErrorCode.FAIL: "操作失败，请稍后重试",
     ErrorCode.UNAUTHORIZED: "未登录或登录已过期",
     ErrorCode.FORBIDDEN: "权限不足",
     ErrorCode.PARAMS_INVALID: "参数校验失败",
