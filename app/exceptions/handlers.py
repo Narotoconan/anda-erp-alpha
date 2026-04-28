@@ -13,14 +13,20 @@ from app.exceptions.errors import BizException, ErrorCode
 from app.exceptions.validation_i18n import translate_validation_error
 
 
-def _build_error_response(
+def build_error_response(
     *,
     http_status: int,
     code: int,
     message: str,
     result: dict | None = None,
 ) -> JSONResponse:
-    """构建统一错误 JSON 响应"""
+    """
+    构建统一错误 JSON 响应。
+
+    供异常处理器与中间件共享使用，确保全链路错误响应格式一致。
+    注意：中间件层无法直接抛出 BizException 等业务异常来触发 ExceptionMiddleware，
+    因此需要主动调用本函数构造响应并返回。
+    """
     return JSONResponse(
         status_code=http_status,
         content={
@@ -42,7 +48,7 @@ async def biz_exception_handler(_request: Request, exc: BizException) -> JSONRes
         exc.message,
         _request.url.path,
     )
-    return _build_error_response(
+    return build_error_response(
         http_status=exc.http_status,
         code=exc.code,
         message=exc.message,
@@ -64,7 +70,7 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
     message = translate_validation_error(first) if first else "参数校验失败，请检查输入内容"
 
     log.warning("ValidationError | path={} | {}", _request.url.path, message)
-    return _build_error_response(
+    return build_error_response(
         http_status=status.HTTP_422_UNPROCESSABLE_ENTITY,
         code=ErrorCode.PARAMS_INVALID,
         message=message,
@@ -93,7 +99,7 @@ async def http_exception_handler(_request: Request, exc: StarletteHTTPException)
         exc.detail,
         _request.url.path,
     )
-    return _build_error_response(
+    return build_error_response(
         http_status=exc.status_code,
         code=code,
         message=str(exc.detail) if exc.detail else "请求失败",
@@ -110,7 +116,7 @@ async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSON
         _request.url.path,
         str(exc),
     )
-    return _build_error_response(
+    return build_error_response(
         http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         code=ErrorCode.INTERNAL_ERROR,
         message="系统内部错误，请稍后重试",
@@ -128,4 +134,4 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(Exception, unhandled_exception_handler)
 
 
-__all__ = ["register_exception_handlers"]
+__all__ = ["build_error_response", "register_exception_handlers"]

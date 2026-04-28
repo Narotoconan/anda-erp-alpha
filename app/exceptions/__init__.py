@@ -7,7 +7,7 @@ from app.exceptions.errors import (
     ParamsException,
     get_error_message,
 )
-from app.exceptions.handlers import register_exception_handlers
+from app.exceptions.handlers import build_error_response, register_exception_handlers
 
 __all__ = [
     "AuthException",
@@ -16,6 +16,7 @@ __all__ = [
     "ForbiddenException",
     "NotFoundException",
     "ParamsException",
+    "build_error_response",
     "get_error_message",
     "register_exception_handlers",
 ]
