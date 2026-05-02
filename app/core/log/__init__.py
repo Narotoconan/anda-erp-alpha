@@ -2,7 +2,7 @@ from logging import Logger
 
 from .log_loguru import register
 
-log: Logger | None = None
+log: Logger
 
 
 def register_log():
