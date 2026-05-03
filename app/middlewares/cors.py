@@ -29,7 +29,7 @@ def register_cors_middleware(app: FastAPI) -> None:
         allow_headers=cors.CORS_ALLOW_HEADERS,
     )
     log.info(
-        "CORS 中间件已注册 | allow_origins={} allow_credentials={}",
+        "🧩 CORS 中间件已注册 | allow_origins={} allow_credentials={}",
         cors.CORS_ALLOW_ORIGINS,
         cors.CORS_ALLOW_CREDENTIALS,
     )

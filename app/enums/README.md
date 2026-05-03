@@ -4,7 +4,7 @@
 app/enums/
 ├── __init__.py       # 统一对外导出
 ├── common.py         # ✅ 已有：跨业务通用（Gender、Status、SortOrder）
-├── user.py           # 用户域：角色、登录方式、账号类型
+├── demo.py           # 用户域：角色、登录方式、账号类型
 ├── order.py          # 订单域：订单状态、支付状态、支付方式、发货方式
 ├── product.py        # 商品域：商品状态、计量单位、商品类型
 └── finance.py        # 财务域：单据类型、币种、账单状态
