@@ -24,7 +24,7 @@ def register_middlewares(app: FastAPI) -> None:
         2. register_gzip_middleware  —— 中间层，负责响应压缩
         3. register_cors_middleware  —— 最外层，处理跨域预检
     """
-    register_jwt_middleware(app)   # 第三层（最内层）：JWT 鉴权
+    # register_jwt_middleware(app)   # 第三层（最内层）：JWT 鉴权
     register_gzip_middleware(app)  # 第二层：GZip 压缩
     register_cors_middleware(app)  # 第一层（最外层）：CORS 跨域
 

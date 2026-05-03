@@ -3,6 +3,8 @@
 注册到 FastAPI app 后，所有异常会被统一拦截并转换为标准 JSON 响应格式。
 """
 
+from typing import cast
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -40,32 +42,34 @@ def build_error_response(
 # ==================== 异常处理函数 ====================
 
 
-async def biz_exception_handler(_request: Request, exc: BizException) -> JSONResponse:
+async def biz_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
     """业务异常处理"""
+    _exc = cast(BizException, exc)
     log.warning(
         "BizException | code={} message={} path={}",
-        exc.code,
-        exc.message,
+        _exc.code,
+        _exc.message,
         _request.url.path,
     )
     return build_error_response(
-        http_status=exc.http_status,
-        code=exc.code,
-        message=exc.message,
-        result=exc.result,
+        http_status=_exc.http_status,
+        code=_exc.code,
+        message=_exc.message,
+        result=_exc.result,
     )
 
 
-async def validation_exception_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
     """
     Pydantic / FastAPI 参数校验异常处理
 
     取第一条校验错误翻译为中文消息写入 message，result 返回空对象。
     多条错误时仅展示第一条，避免信息过载；完整错误列表通过日志记录。
     """
+    _exc = cast(RequestValidationError, exc)
     # 过滤 Pydantic v2 默认注入的官方文档链接字段，减少日志噪音
     # 不使用 include_url=False，因为 FastAPI RequestValidationError.errors() 不支持该参数
-    errors = [{k: v for k, v in e.items() if k != "url"} for e in exc.errors()]
+    errors = [{k: v for k, v in e.items() if k != "url"} for e in _exc.errors()]
     first = errors[0] if errors else {}
     message = translate_validation_error(first) if first else "参数校验失败，请检查输入内容"
 
@@ -77,11 +81,12 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
     )
 
 
-async def http_exception_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+async def http_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
     """
     Starlette / FastAPI HTTPException 处理
     将框架原生的 HTTP 异常也转换为统一格式
     """
+    _exc = cast(StarletteHTTPException, exc)
     # 映射常见 HTTP 状态码到业务错误码
     _STATUS_CODE_MAP: dict[int, int] = {
         401: ErrorCode.UNAUTHORIZED,
@@ -91,18 +96,18 @@ async def http_exception_handler(_request: Request, exc: StarletteHTTPException)
         422: ErrorCode.PARAMS_INVALID,
         429: ErrorCode.FAIL,
     }
-    code = _STATUS_CODE_MAP.get(exc.status_code, ErrorCode.FAIL)
+    code = _STATUS_CODE_MAP.get(_exc.status_code, ErrorCode.FAIL)
 
     log.warning(
         "HTTPException | status={} detail={} path={}",
-        exc.status_code,
-        exc.detail,
+        _exc.status_code,
+        _exc.detail,
         _request.url.path,
     )
     return build_error_response(
-        http_status=exc.status_code,
+        http_status=_exc.status_code,
         code=code,
-        message=str(exc.detail) if exc.detail else "请求失败",
+        message=str(_exc.detail) if _exc.detail else "请求失败",
     )
 
 

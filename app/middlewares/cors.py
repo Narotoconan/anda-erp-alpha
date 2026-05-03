@@ -22,7 +22,7 @@ def register_cors_middleware(app: FastAPI) -> None:
     cors = get_settings().cors
 
     app.add_middleware(
-        CORSMiddleware,
+        CORSMiddleware,  # type: ignore[arg-type]
         allow_origins=cors.CORS_ALLOW_ORIGINS,
         allow_credentials=cors.CORS_ALLOW_CREDENTIALS,
         allow_methods=cors.CORS_ALLOW_METHODS,
